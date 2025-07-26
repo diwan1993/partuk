@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QR Library Management System</title>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.0/jspdf.plugin.autotable.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="header">
+    <div class="header-content">
+      <div class="header-left">
+        <img src="https://epu.edu.iq/wp-content/uploads/2018/09/cropped-EPU-Logo-n-copy-2.png" alt="EPU Logo" class="logo">
+        <h1 id="mainTitle">Library Management System</h1>
+      </div>
+                          <div class="header-right">
+                      <button id="dashboardBtn" onclick="toggleDashboard()" class="dashboard-btn">📊 Dashboard</button>
+                      <button id="languageToggle" onclick="toggleLanguage()" class="language-btn">بگۆڕە بۆ کوردی</button>
+                    </div>
+    </div>
+  </div>
+
+  <!-- Login Panel -->
+  <div class="panel" id="loginPanel">
+    <h2 id="loginTitle">Admin Login</h2>
+    <input type="text" id="adminUser" placeholder="Username" />
+    <input type="password" id="adminPass" placeholder="Password" />
+    <button onclick="login()" id="loginBtn">Login</button>
+    <p id="loginMessage"></p>
+  </div>
+
+  <div id="mainContent" style="display:none;">
+    <div class="container">
+      <!-- Dashboard Panel -->
+      <div class="panel dashboard-panel" id="dashboardPanel" style="display: none;">
+        <h2 id="dashboardTitle">Dashboard</h2>
+        <div class="dashboard-stats">
+          <div class="stat-card">
+            <div class="stat-icon">📚</div>
+            <div class="stat-info">
+              <h3 id="totalBooksLabel">Total Books</h3>
+              <p id="totalBooksCount">0</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-info">
+              <h3 id="totalMembersLabel">Total Members</h3>
+              <p id="totalMembersCount">0</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📖</div>
+            <div class="stat-info">
+              <h3 id="checkedOutLabel">Checked Out</h3>
+              <p id="checkedOutCount">0</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-info">
+              <h3 id="overdueLabel">Overdue</h3>
+              <p id="overdueCount">0</p>
+            </div>
+          </div>
+        </div>
+        <div class="dashboard-recent">
+          <div class="recent-section">
+            <h3 id="recentBooksLabel">Recent Books</h3>
+            <div id="recentBooksList" class="recent-list"></div>
+          </div>
+          <div class="recent-section">
+            <h3 id="recentMembersLabel">Recent Members</h3>
+            <div id="recentMembersList" class="recent-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Member Management Panel -->
+      <div class="panel">
+        <h2 id="memberManagementTitle">Member Management</h2>
+        <table>
+          <thead>
+            <tr><th id="nameHeader">Name</th><th id="phoneHeader">Phone</th><th id="statusHeader">Status</th><th id="actionHeader">Action</th></tr>
+          </thead>
+          <tbody id="membersList"></tbody>
+        </table>
+      </div>
+
+      <!-- Checkout/Checkin Panel -->
+      <div class="panel">
+        <h2 id="checkoutTitle">Checkout/Checkin Books</h2>
+        <div>
+          <button onclick="startCheckout()" id="checkoutBtn">Checkout Book</button>
+          <button onclick="startCheckin()" id="checkinBtn">Checkin Book</button>
+          <button onclick="cancelOperation()" id="cancelBtn">Cancel</button>
+        </div>
+        <div id="currentOperation"></div>
+        <div class="scanner-container">
+          <div id="reader"></div>
+        </div>
+        <div id="transactionInfo"></div>
+      </div>
+
+      <!-- Book Management Panel (Full Width) -->
+      <div class="panel full-width-panel">
+        <h2 id="bookManagementTitle">Book Management</h2>
+        <input type="text" id="bookTitle" placeholder="Title" />
+        <input type="text" id="bookAuthor" placeholder="Author" />
+        <input type="text" id="bookTtiCode" placeholder="TTI Code" />
+        <input type="text" id="bookIsbn" placeholder="ISBN (Optional)" />
+        <select id="bookCategory">
+          <option value="" id="selectCategoryOption">Select Category</option>
+          <option value="Mystery">Mystery</option>
+          <option value="Horror">Horror</option>
+          <option value="Literary fiction">Literary fiction</option>
+          <option value="Novel">Novel</option>
+          <option value="Medical">medical</option>
+          <option value="History">History</option>
+          <option value="Children's">Children's</option>
+          <option value="Poetry">Poetry</option>
+          <option value="Autobiography">Autobiography</option>
+          <option value="Nursing">Nursing</option>
+          <option value="Business Administration">Business Administration</option>
+          <option value="Medical Laboratory Technician">Medical Laboratory Technician</option>
+          <option value="Yearbook Publishing">Yearbook Publishing</option>
+        </select>
+        <button onclick="addBook()" id="addBookBtn">Add Book</button>
+        <button onclick="toggleBooksTable()" id="showTableBtn">Show Table</button>
+        <button onclick="exportBooksToExcelWithQR()" id="exportBtn">Export Books with QR to Excel</button>
+        <table id="booksTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th id="titleHeader">Title</th>
+                    <th id="authorHeader">Author</th>
+                    <th id="ttiCodeHeader">TTI Code</th>
+                    <th id="isbnHeader">ISBN</th>
+                    <th id="categoryHeader">Category</th>
+                    <th id="bookStatusHeader">Status</th>
+                    <th id="qrCodeHeader">QR Code</th>
+                    <th id="bookActionHeader">Action</th>
+                </tr>
+            </thead>
+            <tbody id="booksList"></tbody>
+        </table>
+      </div>
+
+      <!-- Transactions History Panel (Full Width) -->
+      <div class="panel full-width-panel">
+        <h2 id="transactionHistoryTitle">Transaction History</h2>
+        <div>
+          <button onclick="exportTransactions()" id="exportDataBtn">Export Data</button>
+          <button onclick="clearTransactions()" id="deleteAllBtn">Delete All</button>
+          <button onclick="toggleTransactionsTable()" id="showTransactionsBtn">Show Table</button>
+        </div>
+        <table id="transactionsTable" style="display: none;">
+          <thead>
+            <tr>
+              <th id="bookHeader">Book</th>
+              <th id="memberHeader">Member</th>
+              <th id="checkoutDateHeader">Checkout Date</th>
+              <th id="dueDateHeader">Due Date</th>
+              <th id="transactionStatusHeader">Status</th>
+            </tr>
+          </thead>
+          <tbody id="transactionsList"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Developer Credit Footer -->
+  <div class="footer">
+    <p>Developed by Diwan Abubaker</p>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
